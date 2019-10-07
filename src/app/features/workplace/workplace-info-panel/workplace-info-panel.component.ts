@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, Output, EventEmitter, } from '@angular/core';
 import { Establishment } from '@core/model/establishment.model';
 import { Workplace, WorkplaceDataOwner } from '@core/model/my-workplaces.model';
 import { DialogService } from '@core/services/dialog.service';
@@ -6,12 +6,15 @@ import { EstablishmentService } from '@core/services/establishment.service';
 import { PermissionsService } from '@core/services/permissions/permissions.service';
 import { ChangeDataOwnerDialogComponent } from '@shared/components/change-data-owner-dialog/change-data-owner-dialog.component';
 import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
+import { AlertService } from '@core/services/alert.service';
 
 @Component({
   selector: 'app-workplace-info-panel',
   templateUrl: './workplace-info-panel.component.html',
 })
 export class WorkplaceInfoPanelComponent implements OnInit, OnDestroy {
+  @Output() public changeOwnershipEvent = new EventEmitter();
   @Input() public workplace: Workplace;
   public canViewEstablishment: boolean;
   public canChangePermissionsForSubsidiary: boolean;
@@ -22,8 +25,11 @@ export class WorkplaceInfoPanelComponent implements OnInit, OnDestroy {
   constructor(
     private dialogService: DialogService,
     private establishmentService: EstablishmentService,
-    private permissionsService: PermissionsService
-  ) {}
+    private router: Router,
+    private permissionsService: PermissionsService,
+    private alertService: AlertService,
+
+  ) { }
 
   ngOnInit() {
     this.primaryWorkplace = this.establishmentService.primaryWorkplace;
@@ -47,12 +53,14 @@ export class WorkplaceInfoPanelComponent implements OnInit, OnDestroy {
     dialog.afterClosed.subscribe(changeDataOwnerConfirmed => {
       if (changeDataOwnerConfirmed) {
         this.changeDataOwner();
+        this.router.navigate(['/dashboard']);
+        this.alertService.addAlert({ type: 'success', message: `Request to change data owner has been sent to ${this.workplace.name} ` });
       }
     });
   }
 
   private changeDataOwner(): void {
-    console.log('changeDataOwner fired');
+    this.changeOwnershipEvent.emit(true);
   }
 
   ngOnDestroy(): void {
